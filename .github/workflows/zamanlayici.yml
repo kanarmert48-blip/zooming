@@ -15,13 +15,5 @@ jobs:
       - run: python bot.py
         env:
           DISCORD_USER_TOKEN: ${{ secrets.DISCORD_USER_TOKEN }}
-          COMMAND: work
-      - run: python bot.py
-        env:
-          DISCORD_USER_TOKEN: ${{ secrets.DISCORD_USER_TOKEN }}
-          COMMAND: crime
-      - run: python bot.py
-        env:
-          DISCORD_USER_TOKEN: ${{ secrets.DISCORD_USER_TOKEN }}
-          COMMAND: daily
+          COMMANDS: work,crime,daily
 #son
