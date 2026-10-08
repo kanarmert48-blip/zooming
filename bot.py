@@ -66,23 +66,25 @@ def connect():
     print("READY gelmedi"); return None, None
 
 def load_index():
-    cmds = []
-    for url in (f"{API}/guilds/{GUILD_ID}/application-command-index",
-                f"{API}/channels/{CHANNEL_ID}/application-command-index"):
-        r = requests.get(url, headers=HEADERS)
-        if r.status_code == 200:
-            cmds += r.json().get("application_commands", [])
-        else:
-            print(f"index hatasi {r.status_code}: {r.text[:150]}")
+    r = requests.get(f"{API}/guilds/{GUILD_ID}/application-command-index", headers=HEADERS)
+    if r.status_code != 200:
+        print(f"index hatasi {r.status_code}: {r.text[:150]}")
+        return []
+    cmds = [c for c in r.json().get("application_commands", []) if c.get("type", 1) == 1]
     print(f"{len(cmds)} komut bulundu")
     return cmds
 
-def find(cmds, name):
+def pick_app(cmds):
+    # istenen komutlarin en cogunu saglayan bot = Zooming Bot
+    counts = {}
     for c in cmds:
-        if c.get("name") == name and c.get("type", 1) == 1:
-            return c
-    print(f"/{name} bulunamadi")
-    return None
+        if c.get("name") in COMMANDS:
+            counts[c["application_id"]] = counts.get(c["application_id"], 0) + 1
+    if not counts:
+        return None
+    app = max(counts, key=counts.get)
+    print(f"secilen bot: {app} ({counts[app]} komut eslesti)")
+    return app
 
 def trigger(c, sid):
     payload = {"type": 2, "application_id": c["application_id"], "guild_id": GUILD_ID,
@@ -102,10 +104,13 @@ def main():
         raise SystemExit(1)
     print("baglanti tamam")
     cmds = load_index()
+    app = pick_app(cmds)
     for name in COMMANDS:
-        c = find(cmds, name)
+        c = next((x for x in cmds if x["name"] == name and x["application_id"] == app), None)
         if c:
             trigger(c, sid)
+        else:
+            print(f"/{name} bu botta yok")
         time.sleep(4)
     time.sleep(3)
     state["alive"] = False
