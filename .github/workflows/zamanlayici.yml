@@ -1,0 +1,27 @@
+name: zooming-auto
+"on":
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install requests websocket-client
+      - run: python bot.py
+        env:
+          DISCORD_USER_TOKEN: ${{ secrets.DISCORD_USER_TOKEN }}
+          COMMAND: work
+      - run: python bot.py
+        env:
+          DISCORD_USER_TOKEN: ${{ secrets.DISCORD_USER_TOKEN }}
+          COMMAND: crime
+      - run: python bot.py
+        env:
+          DISCORD_USER_TOKEN: ${{ secrets.DISCORD_USER_TOKEN }}
+          COMMAND: daily
+#son
