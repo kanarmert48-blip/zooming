@@ -3,7 +3,10 @@ import os, json, time, threading, requests, websocket
 TOKEN = os.environ["DISCORD_USER_TOKEN"].strip()
 GUILD_ID = "1121177632185258108"
 CHANNEL_ID = "1136760078964363387"
-COMMANDS = [c.strip() for c in os.environ.get("COMMANDS", "work,crime,daily").split(",") if c.strip()]
+
+COMMANDS = ["work", "crime"]
+if time.gmtime().tm_hour % 4 == 0:
+    COMMANDS.append("daily")
 
 API = "https://discord.com/api/v9"
 HEADERS = {"Authorization": TOKEN, "Content-Type": "application/json"}
@@ -75,10 +78,9 @@ def load_index():
     return cmds
 
 def pick_app(cmds):
-    # istenen komutlarin en cogunu saglayan bot = Zooming Bot
     counts = {}
     for c in cmds:
-        if c.get("name") in COMMANDS:
+        if c.get("name") in ("work", "crime", "daily"):
             counts[c["application_id"]] = counts.get(c["application_id"], 0) + 1
     if not counts:
         return None
@@ -99,6 +101,7 @@ def trigger(c, sid):
         print(f"/{c['name']} hata {r.status_code}: {r.text[:200]}")
 
 def main():
+    print(f"bu calismada: {', '.join(COMMANDS)}")
     ws, sid = connect()
     if not sid:
         raise SystemExit(1)
