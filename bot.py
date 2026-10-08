@@ -65,15 +65,24 @@ def connect():
             print("token gecersiz ya da oturum reddedildi"); return None, None
     print("READY gelmedi"); return None, None
 
-def discover(name):
-    r = requests.get(f"{API}/channels/{CHANNEL_ID}/application-commands/search",
-        headers=HEADERS, params={"type": 1, "query": name, "limit": 10, "include_applications": "true"})
-    if r.status_code != 200:
-        print(f"/{name} kesif hatasi {r.status_code}: {r.text[:200]}"); return None
-    for c in r.json().get("application_commands", []):
-        if c.get("name") == name:
+def load_index():
+    cmds = []
+    for url in (f"{API}/guilds/{GUILD_ID}/application-command-index",
+                f"{API}/channels/{CHANNEL_ID}/application-command-index"):
+        r = requests.get(url, headers=HEADERS)
+        if r.status_code == 200:
+            cmds += r.json().get("application_commands", [])
+        else:
+            print(f"index hatasi {r.status_code}: {r.text[:150]}")
+    print(f"{len(cmds)} komut bulundu")
+    return cmds
+
+def find(cmds, name):
+    for c in cmds:
+        if c.get("name") == name and c.get("type", 1) == 1:
             return c
-    print(f"/{name} bulunamadi"); return None
+    print(f"/{name} bulunamadi")
+    return None
 
 def trigger(c, sid):
     payload = {"type": 2, "application_id": c["application_id"], "guild_id": GUILD_ID,
@@ -92,8 +101,9 @@ def main():
     if not sid:
         raise SystemExit(1)
     print("baglanti tamam")
+    cmds = load_index()
     for name in COMMANDS:
-        c = discover(name)
+        c = find(cmds, name)
         if c:
             trigger(c, sid)
         time.sleep(4)
