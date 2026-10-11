@@ -3,6 +3,7 @@ import os, json, time, threading, requests, websocket
 TOKEN = os.environ["DISCORD_USER_TOKEN"].strip()
 GUILD_ID = "1121177632185258108"
 CHANNEL_ID = "1136760078964363387"
+ROB_TARGET = os.environ.get("ROB_TARGET", "").strip()
 
 env_cmds = os.environ.get("COMMANDS", "")
 if env_cmds:
@@ -84,7 +85,7 @@ def load_index():
 def pick_app(cmds):
     counts = {}
     for c in cmds:
-        if c.get("name") in ("work", "crime", "daily"):
+        if c.get("name") in ("work", "crime", "daily", "rob"):
             counts[c["application_id"]] = counts.get(c["application_id"], 0) + 1
     if not counts:
         return None
@@ -92,11 +93,20 @@ def pick_app(cmds):
     print(f"secilen bot: {app} ({counts[app]} komut eslesti)")
     return app
 
+def build_options(c):
+    if c["name"] != "rob":
+        return []
+    target = ROB_TARGET or c["application_id"]
+    opt = next((o for o in c.get("options", []) if o.get("type") == 6), None)
+    opt_name = opt["name"] if opt else "user"
+    print(f"/rob hedefi: {target}")
+    return [{"type": 6, "name": opt_name, "value": target}]
+
 def trigger(c, sid):
     payload = {"type": 2, "application_id": c["application_id"], "guild_id": GUILD_ID,
         "channel_id": CHANNEL_ID, "session_id": sid,
         "data": {"version": c["version"], "id": c["id"], "name": c["name"],
-            "type": 1, "options": [], "application_command": c, "attachments": []},
+            "type": 1, "options": build_options(c), "application_command": c, "attachments": []},
         "nonce": str(int(time.time() * 1000) << 22)}
     r = requests.post(f"{API}/interactions", headers=HEADERS, json=payload)
     if r.status_code in (200, 204):
