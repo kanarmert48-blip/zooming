@@ -4,9 +4,13 @@ TOKEN = os.environ["DISCORD_USER_TOKEN"].strip()
 GUILD_ID = "1121177632185258108"
 CHANNEL_ID = "1136760078964363387"
 
-COMMANDS = ["work", "crime"]
-if time.gmtime().tm_hour % 4 == 0:
-    COMMANDS.append("daily")
+env_cmds = os.environ.get("COMMANDS", "")
+if env_cmds:
+    COMMANDS = [c.strip() for c in env_cmds.split(",") if c.strip()]
+else:
+    COMMANDS = ["work"]
+    if time.gmtime().tm_hour % 4 == 0:
+        COMMANDS.append("daily")
 
 API = "https://discord.com/api/v9"
 HEADERS = {"Authorization": TOKEN, "Content-Type": "application/json"}
